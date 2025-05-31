@@ -6,12 +6,11 @@
 const char* ssid = "Alberttt";
 const char* password = "iloveyou3000";
 
-const char* serverUrl = "http://192.168.0.42:3000/api/alert";
-
-// Pin configuration
+const char* serverUrl = "http://192.168.0.38:3000/api/alert";
+ 
 int buzzer = 23;
 int led = 12; 
-const int soundSensorPin = 34;  
+const int soundSensorPin = 35;  
 int sda = 21;
 int scl = 22;
 
@@ -23,6 +22,26 @@ void manualAlertOn() {
   Serial.println("turning on");
   digitalWrite(buzzer, HIGH);
   digitalWrite(led, HIGH);
+  HTTPClient http;
+  http.begin(serverUrl);
+  http.addHeader("Content-Type", "application/json");
+
+  String jsonPayload = "{\"activity\": \"Alert Triggered\", \"soundLevel\": " + String(soundLevel) + "}";
+
+  int httpResponseCode = http.POST(jsonPayload);
+
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpResponseCode);
+
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("Server response:"); 
+    Serial.println(response);
+  } else {
+    Serial.println("Error in HTTP request");
+  }
+
+  http.end();
   server.send(200, "text/plain", "Alert ON");
 }
 
@@ -30,6 +49,26 @@ void manualAlertOff() {
   Serial.println("turning off");
   digitalWrite(buzzer, LOW);
   digitalWrite(led, LOW);
+  HTTPClient http;
+  http.begin(serverUrl);
+  http.addHeader("Content-Type", "application/json");
+
+  String jsonPayload = "{\"activity\": \"Alert Triggered\", \"soundLevel\": " + String(soundLevel) + "}";
+
+  int httpResponseCode = http.POST(jsonPayload);
+
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpResponseCode);
+
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("Server response:"); 
+    Serial.println(response);
+  } else {
+    Serial.println("Error in HTTP request");
+  }
+
+  http.end();
   server.send(200, "text/plain", "Alert OFF");
 }
 
@@ -63,8 +102,9 @@ void loop() {
   soundLevel = analogRead(soundSensorPin);
   Serial.println(soundLevel);  
 
-  if (soundLevel >= 4095) {
-    digitalWrite(buzzer, HIGH);
+  if (soundLevel >= 3000) {
+    // digitalWrite(buzzer, HIGH);
+    Serial.println("buzzer sound");
     digitalWrite(led, HIGH);
 
     if (WiFi.status() == WL_CONNECTED) {
@@ -72,7 +112,7 @@ void loop() {
       http.begin(serverUrl);
       http.addHeader("Content-Type", "application/json");
 
-      String jsonPayload = "{\"activity\": \"Alert Triggered\", \"soundLevel\": " + String(soundLevel) + ", \"timestamp\": " + String(millis()) + "}";
+      String jsonPayload = "{\"activity\": \"Alert Triggered\", \"soundLevel\": " + String(soundLevel) + "}";
 
       int httpResponseCode = http.POST(jsonPayload);
 
@@ -81,7 +121,7 @@ void loop() {
 
       if (httpResponseCode > 0) {
         String response = http.getString();
-        Serial.println("Server response:");
+        Serial.println("Server response:"); 
         Serial.println(response);
       } else {
         Serial.println("Error in HTTP request");
